@@ -18,9 +18,11 @@
         <p class="topbar__sub">Manufacturing Quality Inspection</p>
       </div>
     </div>
-    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle light/dark theme">
-      <span class="theme-toggle__icon">☾</span>
-      <span class="theme-toggle__label">Dark</span>
+
+    <button id="themeToggle" class="theme-switch" type="button" role="switch" aria-checked="true" aria-label="Toggle light/dark theme">
+      <span class="theme-switch__icon theme-switch__icon--sun">☀</span>
+      <span class="theme-switch__track"><span class="theme-switch__thumb"></span></span>
+      <span class="theme-switch__icon theme-switch__icon--moon">☾</span>
     </button>
   </header>
 
@@ -80,61 +82,78 @@
         </div>
 
         <p id="formError" class="form-error" role="alert" hidden></p>
+        <p id="formStatus" class="form-status" role="status" hidden></p>
 
-        <button type="submit" class="submit-btn">
-          <span>Submit Inspection</span>
-          <span class="submit-btn__arrow">→</span>
-        </button>
+        <div class="btn-row">
+          <button type="submit" class="submit-btn">
+            <span>Submit Inspection</span>
+            <span class="submit-btn__arrow">→</span>
+          </button>
+          <button type="button" id="newEntryBtn" class="secondary-btn" title="Clear the form for a new ticket">
+            New Entry
+          </button>
+        </div>
       </form>
     </section>
 
     <!-- RIGHT: Quality snapshot with dial gauges -->
     <section class="snapshot" aria-labelledby="snapshotTitle">
       <div class="snapshot__header">
-        <h2 id="snapshotTitle">Quality Snapshot</h2>
-        <p class="snapshot__desc">Live readout based on the quantities entered.</p>
-      </div>
-
-      <div class="gauges">
-        <div class="gauge" data-metric="reject">
-          <svg viewBox="0 0 200 120" class="gauge__svg">
-            <path class="gauge__track" d="M20,110 A80,80 0 0 1 180,110" />
-            <path class="gauge__fill" id="rejectArc" d="M20,110 A80,80 0 0 1 180,110" />
-            <line class="gauge__needle" id="rejectNeedle" x1="100" y1="110" x2="100" y2="40" />
-            <circle class="gauge__hub" cx="100" cy="110" r="6" />
-          </svg>
-          <div class="gauge__readout">
-            <span class="gauge__value" id="rejectPct">0.00%</span>
-            <span class="gauge__label">Reject %</span>
-          </div>
+        <div>
+          <h2 id="snapshotTitle">Quality Snapshot</h2>
+          <p class="snapshot__desc">Live readout based on the quantities entered.</p>
         </div>
-
-        <div class="gauge" data-metric="rework">
-          <svg viewBox="0 0 200 120" class="gauge__svg">
-            <path class="gauge__track" d="M20,110 A80,80 0 0 1 180,110" />
-            <path class="gauge__fill gauge__fill--rework" id="reworkArc" d="M20,110 A80,80 0 0 1 180,110" />
-            <line class="gauge__needle gauge__needle--rework" id="reworkNeedle" x1="100" y1="110" x2="100" y2="40" />
-            <circle class="gauge__hub" cx="100" cy="110" r="6" />
-          </svg>
-          <div class="gauge__readout">
-            <span class="gauge__value" id="reworkPct">0.00%</span>
-            <span class="gauge__label">Rework %</span>
-          </div>
+        <div class="export-row">
+          <button type="button" id="downloadPdfBtn" class="icon-btn" title="Download this snapshot as a PDF">
+            <span class="icon-btn__glyph">⇩</span> PDF
+          </button>
+          <button type="button" id="downloadJpgBtn" class="icon-btn" title="Download this snapshot as a JPG">
+            <span class="icon-btn__glyph">⇩</span> JPG
+          </button>
         </div>
       </div>
 
-      <dl class="stat-strip">
-        <div><dt>Checked</dt><dd id="statCheck">0</dd></div>
-        <div><dt>OK</dt><dd id="statOk">0</dd></div>
-        <div><dt>Reject</dt><dd id="statReject">0</dd></div>
-        <div><dt>Rework</dt><dd id="statRework">0</dd></div>
-      </dl>
+      <div id="reportCard" class="report-card">
+        <div class="gauges">
+          <div class="gauge" data-metric="reject">
+            <svg viewBox="0 0 200 120" class="gauge__svg">
+              <path class="gauge__track" d="M20,110 A80,80 0 0 1 180,110" />
+              <path class="gauge__fill" id="rejectArc" d="M20,110 A80,80 0 0 1 180,110" />
+              <line class="gauge__needle" id="rejectNeedle" x1="100" y1="110" x2="100" y2="38" />
+              <circle class="gauge__hub" cx="100" cy="110" r="6" />
+            </svg>
+            <div class="gauge__readout">
+              <span class="gauge__value" id="rejectPct">0.00%</span>
+              <span class="gauge__label">Reject %</span>
+            </div>
+          </div>
 
-      <details class="webhook-config">
-        <summary>Webhook endpoint (optional)</summary>
-        <p class="webhook-config__hint">Point this at your n8n webhook to forward each submission automatically.</p>
-        <input type="url" id="webhookUrl" placeholder="https://your-n8n-instance/webhook/inspection" />
-      </details>
+          <div class="gauge" data-metric="rework">
+            <svg viewBox="0 0 200 120" class="gauge__svg">
+              <path class="gauge__track" d="M20,110 A80,80 0 0 1 180,110" />
+              <path class="gauge__fill gauge__fill--rework" id="reworkArc" d="M20,110 A80,80 0 0 1 180,110" />
+              <line class="gauge__needle gauge__needle--rework" id="reworkNeedle" x1="100" y1="110" x2="100" y2="38" />
+              <circle class="gauge__hub" cx="100" cy="110" r="6" />
+            </svg>
+            <div class="gauge__readout">
+              <span class="gauge__value" id="reworkPct">0.00%</span>
+              <span class="gauge__label">Rework %</span>
+            </div>
+          </div>
+        </div>
+
+        <dl class="stat-strip">
+          <div><dt>Checked</dt><dd id="statCheck">0</dd></div>
+          <div><dt>OK</dt><dd id="statOk">0</dd></div>
+          <div><dt>Reject</dt><dd id="statReject">0</dd></div>
+          <div><dt>Rework</dt><dd id="statRework">0</dd></div>
+        </dl>
+
+        <div class="report-card__meta">
+          <span id="reportPart">No part selected</span>
+          <span id="reportTime">—</span>
+        </div>
+      </div>
 
       <ul class="log" id="submissionLog" aria-live="polite"></ul>
     </section>
@@ -145,6 +164,8 @@
     <span>InspectLog — digital logbook for real-time manufacturing quality control</span>
   </footer>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
