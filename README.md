@@ -9,8 +9,10 @@ Replicates and extends the MQI Lovable prototype (`quality-track-insight.lovable
 - Check / OK / Reject / Rework quantity entry with inline validation
 - Live Reject % and Rework % readout on analog-style dial gauges
 - Local submission log (session-only)
-- Optional webhook field — point it at an n8n webhook URL and every submission POSTs there automatically as JSON
-- Light/dark theme toggle
+- Every submission POSTs automatically to the production n8n webhook (hardcoded in `script.js`)
+- **New Entry** — clears the form for the next ticket
+- **Download PDF** / **Download JPG** — exports the current Quality Snapshot as a report
+- Light/dark theme toggle switch
 
 ## Files
 - `index.html` — structure
@@ -30,7 +32,7 @@ python3 -m http.server 8000
 3. The app will be live at `https://<username>.github.io/<repo-name>/`.
 
 ## Wiring into the automation pipeline
-Paste your n8n webhook URL into the "Webhook endpoint" field on the page. Each submission POSTs this JSON payload:
+Each submission POSTs to the production webhook `https://gauravai.app.n8n.cloud/webhook/mauli-inspection` (set as `WEBHOOK_URL` in `script.js` — change it there if the endpoint ever moves). Payload shape:
 
 ```json
 {
