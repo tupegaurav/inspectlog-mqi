@@ -1,50 +1,54 @@
-# InspectLog — Manufacturing Quality Inspection
+# Quality Insight Hub
 
-A lightweight, single-page inspection form for recording part-level quality checks on the shop floor. Plain HTML/CSS/JS, no build step, deployable as-is on GitHub Pages.
+Build a professional production-ready responsive React + TypeScript + Tailwind web app named “MQI — Quality Intelligence Platform” with subtitle “Manufacturing Quality Inspection.” Do not use the word “Maui” anywhere.
 
-Replicates and extends the MQI Lovable prototype (`quality-track-insight.lovable.app`) as a standalone, self-hosted app that can plug directly into the InspectLog n8n automation pipeline.
+Implement the detailed user specification exactly:
+- Enterprise manufacturing/QC design: white/light background, teal/green accents, clean typography, rounded cards, accessible responsive desktop/tablet layout, no unnecessary animations.
+- Inspection Details form. Required Part Name dropdown with EXACT options:
+TVS FRONT CALIPER
+K-17 FRONT CALIPER
+REJ-C MASTER CYL
+ACPD CALIPER
+HERO ADHG CALIPER
+HONDA UNICORN CALIPER
+CANISTER K10
+N-TOEQ MASTER CYL
+TVS FRONT MASTER CYLINDER
+HERO ABSR MASTER CYL
+ADJR MASTER CYLINDER
+ADHG MASTER CYLINDER
+HONDA UNICORN MASTER CYLINDER
+H105 M/CYL
+PULSER HOLDER BRACKET
+- Required numeric Check Qty, OK Qty, Reject Qty. Optional Rework Qty. Basic frontend validation only: required fields and all quantities non-negative whole numbers. Empty Rework must send numeric 0.
+- Explicitly NEVER implement quantity balance or arithmetic validation of any kind between checkQty, okQty, and rejQty. Do not calculate or compare quantity differences. Do not add tolerances, math checks, quantity mismatch UI, expected/got UI, or frontend invalidity based on quantity arithmetic, including in any helper/component.
+- Quality Snapshot shows Reject % = Reject Qty / Check Qty *100 and Rework %= Rework Qty / Check Qty*100, display-only rounded to exactly 2 decimal places; show 0.00% when Check Qty is 0. Never use percentage for validation.
+- Submit Inspection: on click basic validation only; prevent duplicates by disabling button and label “Submitting Inspection...”; POST to exact production webhook https://gauravai.app.n8n.cloud/webhook/mauli-inspection (not webhook-test) with headers Content-Type: application/json and Accept: application/json. Body exact shape/names with numeric values: partName, checkQty, okQty, rejQty, reworkQty, rejPercent, reworkPercent. Parse JSON response and clearly show actual backend response. Do not frontend reinterpret, modify, override, or add validation from backend response. If isValid true, display exactly/clearly “Inspection submitted successfully.” If isValid false, display returned errors. Preserve severity and backend-provided response clearly without generating extra errors.
+- On network/server error only display “Unable to submit inspection. Please try again.” No technical detail/stack trace. Re-enable button.
+- On successful backend submission, reset all form fields, snapshot to 0.00%, and clear prior errors. Do not clear form on submission failure.
+- Test frontend behavior for the specified examples (1000,800,350,250 and 500,300,255,50): accept without a frontend quantity mismatch error and correct display percentages.
 
-## Features
-- Part picker for the current 15-part catalog (calipers, master cylinders, canister, bracket)
-- Check / OK / Reject / Rework quantity entry with inline validation
-- Live Reject % and Rework % readout on analog-style dial gauges
-- Local submission log (session-only)
-- Every submission POSTs automatically to the production n8n webhook (hardcoded in `script.js`)
-- **New Entry** — clears the form for the next ticket
-- **Download PDF** / **Download JPG** — exports the current Quality Snapshot as a report
-- Light/dark theme toggle switch
+Before completing, inspect the ENTIRE frontend codebase and search/remove any frontend logic or terminology that enforces or refers to Check Qty balance, OK Qty + Reject Qty, quantity mismatch/difference, expected quantities, math checks, tolerance, or checkQty !==/!= okQty + rejQty. Ensure production webhook is used. Verify complete submission flow/build.
 
-## Files
-- `index.html` — structure
-- `style.css` — design system (dark slate + safety-orange, dial gauges)
-- `script.js` — calculations, validation, theme toggle, webhook POST
+This project was built with [Lovable](https://lovable.dev).
 
-## Run locally
-No build tools required — just open `index.html` in a browser, or serve the folder:
+**Live app**: https://quality-track-insight.lovable.app
 
-```bash
-python3 -m http.server 8000
+## Build with Lovable
+
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/a528c430-3a0d-4190-8ef7-c2f7545dd6bd).
+
+- **Ship faster**: describe what you want to build and Lovable handles the code.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+
+## Development
+
+Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+
+```sh
+git clone <this-repository-url>
+cd <repository-name>
+npm i
+npm run dev
 ```
-
-## Deploy to GitHub Pages
-1. Create a new repo and push these three files (plus this README) to `main`.
-2. Repo → Settings → Pages → Source: `Deploy from a branch` → Branch: `main` / `root`.
-3. The app will be live at `https://<username>.github.io/<repo-name>/`.
-
-## Wiring into the automation pipeline
-Each submission POSTs to the production webhook `https://gauravai.app.n8n.cloud/webhook/mauli-inspection` (set as `WEBHOOK_URL` in `script.js` — change it there if the endpoint ever moves). Payload shape:
-
-```json
-{
-  "partName": "TVS FRONT CALIPER",
-  "checkQty": 100,
-  "okQty": 92,
-  "rejectQty": 6,
-  "reworkQty": 2,
-  "rejectPct": 6.0,
-  "reworkPct": 2.0,
-  "submittedAt": "2026-08-27T10:15:00.000Z"
-}
-```
-
-This matches the shape expected by the existing "Mauli Automation Project 01" n8n workflow (webhook → Groq validation agent → Google Sheets append).
