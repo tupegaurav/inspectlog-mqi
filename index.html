@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InspectLog — Manufacturing Quality Inspection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__mark">◈</span>
+      <div>
+        <h1>InspectLog</h1>
+        <p class="topbar__sub">Manufacturing Quality Inspection</p>
+      </div>
+    </div>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle light/dark theme">
+      <span class="theme-toggle__icon">☾</span>
+      <span class="theme-toggle__label">Dark</span>
+    </button>
+  </header>
+
+  <main class="layout">
+
+    <!-- LEFT: Inspection ticket / form -->
+    <section class="ticket" aria-labelledby="ticketTitle">
+      <div class="ticket__header">
+        <span class="ticket__tag">TICKET #<span id="ticketNo">0001</span></span>
+        <h2 id="ticketTitle">Inspection Details</h2>
+        <p class="ticket__desc">Record the inspection quantities for a part and submit them to the quality system.</p>
+      </div>
+
+      <form id="inspectionForm" novalidate>
+        <div class="field">
+          <label for="partName">Part Name <span class="req">*</span></label>
+          <select id="partName" name="partName" required>
+            <option value="" disabled selected>Select a part…</option>
+            <option>TVS FRONT CALIPER</option>
+            <option>K-17 FRONT CALIPER</option>
+            <option>REJ-C MASTER CYL</option>
+            <option>ACPD CALIPER</option>
+            <option>HERO ADHG CALIPER</option>
+            <option>HONDA UNICORN CALIPER</option>
+            <option>CANISTER K10</option>
+            <option>N-TOEQ MASTER CYL</option>
+            <option>TVS FRONT MASTER CYLINDER</option>
+            <option>HERO ABSR MASTER CYL</option>
+            <option>ADJR MASTER CYLINDER</option>
+            <option>ADHG MASTER CYLINDER</option>
+            <option>HONDA UNICORN MASTER CYLINDER</option>
+            <option>H105 M/CYL</option>
+            <option>PULSER HOLDER BRACKET</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="checkQty">Check Qty <span class="req">*</span></label>
+            <input type="number" id="checkQty" name="checkQty" min="0" step="1" inputmode="numeric" required />
+          </div>
+          <div class="field">
+            <label for="okQty">OK Qty <span class="req">*</span></label>
+            <input type="number" id="okQty" name="okQty" min="0" step="1" inputmode="numeric" required />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="rejectQty">Reject Qty <span class="req">*</span></label>
+            <input type="number" id="rejectQty" name="rejectQty" min="0" step="1" inputmode="numeric" required />
+          </div>
+          <div class="field">
+            <label for="reworkQty">Rework Qty <span class="optional">(optional)</span></label>
+            <input type="number" id="reworkQty" name="reworkQty" min="0" step="1" inputmode="numeric" />
+          </div>
+        </div>
+
+        <p id="formError" class="form-error" role="alert" hidden></p>
+
+        <button type="submit" class="submit-btn">
+          <span>Submit Inspection</span>
+          <span class="submit-btn__arrow">→</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- RIGHT: Quality snapshot with dial gauges -->
+    <section class="snapshot" aria-labelledby="snapshotTitle">
+      <div class="snapshot__header">
+        <h2 id="snapshotTitle">Quality Snapshot</h2>
+        <p class="snapshot__desc">Live readout based on the quantities entered.</p>
+      </div>
+
+      <div class="gauges">
+        <div class="gauge" data-metric="reject">
+          <svg viewBox="0 0 200 120" class="gauge__svg">
+            <path class="gauge__track" d="M20,110 A80,80 0 0 1 180,110" />
+            <path class="gauge__fill" id="rejectArc" d="M20,110 A80,80 0 0 1 180,110" />
+            <line class="gauge__needle" id="rejectNeedle" x1="100" y1="110" x2="100" y2="40" />
+            <circle class="gauge__hub" cx="100" cy="110" r="6" />
+          </svg>
+          <div class="gauge__readout">
+            <span class="gauge__value" id="rejectPct">0.00%</span>
+            <span class="gauge__label">Reject %</span>
+          </div>
+        </div>
+
+        <div class="gauge" data-metric="rework">
+          <svg viewBox="0 0 200 120" class="gauge__svg">
+            <path class="gauge__track" d="M20,110 A80,80 0 0 1 180,110" />
+            <path class="gauge__fill gauge__fill--rework" id="reworkArc" d="M20,110 A80,80 0 0 1 180,110" />
+            <line class="gauge__needle gauge__needle--rework" id="reworkNeedle" x1="100" y1="110" x2="100" y2="40" />
+            <circle class="gauge__hub" cx="100" cy="110" r="6" />
+          </svg>
+          <div class="gauge__readout">
+            <span class="gauge__value" id="reworkPct">0.00%</span>
+            <span class="gauge__label">Rework %</span>
+          </div>
+        </div>
+      </div>
+
+      <dl class="stat-strip">
+        <div><dt>Checked</dt><dd id="statCheck">0</dd></div>
+        <div><dt>OK</dt><dd id="statOk">0</dd></div>
+        <div><dt>Reject</dt><dd id="statReject">0</dd></div>
+        <div><dt>Rework</dt><dd id="statRework">0</dd></div>
+      </dl>
+
+      <details class="webhook-config">
+        <summary>Webhook endpoint (optional)</summary>
+        <p class="webhook-config__hint">Point this at your n8n webhook to forward each submission automatically.</p>
+        <input type="url" id="webhookUrl" placeholder="https://your-n8n-instance/webhook/inspection" />
+      </details>
+
+      <ul class="log" id="submissionLog" aria-live="polite"></ul>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>InspectLog — digital logbook for real-time manufacturing quality control</span>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
