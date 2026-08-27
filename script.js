@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  const WEBHOOK_URL = "https://gauravai.app.n8n.cloud/webhook/mauli-inspection";
+
   const form = document.getElementById("inspectionForm");
   const partName = document.getElementById("partName");
   const checkQty = document.getElementById("checkQty");
@@ -8,7 +10,9 @@
   const rejectQty = document.getElementById("rejectQty");
   const reworkQty = document.getElementById("reworkQty");
   const formError = document.getElementById("formError");
+  const formStatus = document.getElementById("formStatus");
   const ticketNo = document.getElementById("ticketNo");
+  const newEntryBtn = document.getElementById("newEntryBtn");
 
   const rejectPctEl = document.getElementById("rejectPct");
   const reworkPctEl = document.getElementById("reworkPct");
@@ -22,9 +26,14 @@
   const statReject = document.getElementById("statReject");
   const statRework = document.getElementById("statRework");
 
-  const webhookUrl = document.getElementById("webhookUrl");
+  const reportCard = document.getElementById("reportCard");
+  const reportPart = document.getElementById("reportPart");
+  const reportTime = document.getElementById("reportTime");
+
   const submissionLog = document.getElementById("submissionLog");
   const themeToggle = document.getElementById("themeToggle");
+  const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+  const downloadJpgBtn = document.getElementById("downloadJpgBtn");
 
   const ARC_LENGTH = 251.2; // semicircle path length for r=80
   let ticketCounter = 1;
@@ -38,7 +47,7 @@
     const clamped = clampPct(pct);
     const offset = ARC_LENGTH - (ARC_LENGTH * clamped) / 100;
     fillEl.style.strokeDashoffset = offset;
-    // needle sweeps -90deg (0%) to +90deg (100%)
+    // needle sweeps -90deg (0%) to +90deg (100%) around its base pivot
     const angle = -90 + (clamped / 100) * 180;
     needleEl.style.transform = `rotate(${angle}deg)`;
   }
@@ -61,19 +70,28 @@
     statOk.textContent = ok;
     statReject.textContent = reject;
     statRework.textContent = rework;
+
+    reportPart.textContent = partName.value || "No part selected";
   }
 
   [checkQty, okQty, rejectQty, reworkQty].forEach((el) =>
     el.addEventListener("input", recalc)
   );
+  partName.addEventListener("change", recalc);
 
   function showError(msg) {
+    formStatus.hidden = true;
     formError.textContent = msg;
     formError.hidden = false;
   }
-  function clearError() {
+  function showStatus(msg) {
     formError.hidden = true;
-    formError.textContent = "";
+    formStatus.textContent = msg;
+    formStatus.hidden = false;
+  }
+  function clearMessages() {
+    formError.hidden = true;
+    formStatus.hidden = true;
   }
 
   function addLogEntry(entry) {
@@ -84,22 +102,28 @@
   }
 
   async function forwardToWebhook(payload) {
-    const url = webhookUrl.value.trim();
-    if (!url) return;
     try {
-      await fetch(url, {
+      await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      showStatus("Submitted and sent to the quality system.");
     } catch (err) {
-      showError("Saved locally, but the webhook could not be reached.");
+      showError("Saved locally, but the automation webhook could not be reached.");
     }
+  }
+
+  function resetTicket() {
+    form.reset();
+    clearMessages();
+    recalc();
+    reportTime.textContent = "—";
   }
 
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
-    clearError();
+    clearMessages();
 
     const check = parseFloat(checkQty.value);
     const ok = parseFloat(okQty.value);
@@ -112,6 +136,7 @@
     if (ok + reject + rework > check)
       return showError("OK + Reject + Rework cannot exceed Check Qty.");
 
+    const submittedAt = new Date();
     const payload = {
       partName: partName.value,
       checkQty: check,
@@ -120,25 +145,82 @@
       reworkQty: rework,
       rejectPct: check > 0 ? +((reject / check) * 100).toFixed(2) : 0,
       reworkPct: check > 0 ? +((rework / check) * 100).toFixed(2) : 0,
-      submittedAt: new Date().toISOString(),
+      submittedAt: submittedAt.toISOString(),
     };
 
     addLogEntry(payload);
+    reportTime.textContent = submittedAt.toLocaleString();
     await forwardToWebhook(payload);
 
     ticketCounter += 1;
     ticketNo.textContent = String(ticketCounter).padStart(4, "0");
-
-    form.reset();
-    recalc();
   });
+
+  newEntryBtn.addEventListener("click", resetTicket);
 
   themeToggle.addEventListener("click", function () {
     const html = document.documentElement;
-    const isLight = html.getAttribute("data-theme") === "light";
-    html.setAttribute("data-theme", isLight ? "dark" : "light");
-    themeToggle.querySelector(".theme-toggle__icon").textContent = isLight ? "☾" : "☀";
-    themeToggle.querySelector(".theme-toggle__label").textContent = isLight ? "Dark" : "Light";
+    const isDark = html.getAttribute("data-theme") !== "light";
+    html.setAttribute("data-theme", isDark ? "light" : "dark");
+    themeToggle.setAttribute("aria-checked", String(!isDark));
+  });
+
+  function reportFilename(ext) {
+    const part = (partName.value || "inspection").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    return `inspectlog-${part}-${stamp}.${ext}`;
+  }
+
+  async function captureReportCanvas() {
+    const theme = document.documentElement.getAttribute("data-theme") === "light" ? "#EEEFEA" : "#181D24";
+    return html2canvas(reportCard, {
+      backgroundColor: theme,
+      scale: 2,
+      useCORS: true,
+    });
+  }
+
+  downloadJpgBtn.addEventListener("click", async function () {
+    downloadJpgBtn.disabled = true;
+    try {
+      const canvas = await captureReportCanvas();
+      const link = document.createElement("a");
+      link.download = reportFilename("jpg");
+      link.href = canvas.toDataURL("image/jpeg", 0.95);
+      link.click();
+    } catch (err) {
+      showError("Could not generate the JPG export.");
+    } finally {
+      downloadJpgBtn.disabled = false;
+    }
+  });
+
+  downloadPdfBtn.addEventListener("click", async function () {
+    downloadPdfBtn.disabled = true;
+    try {
+      const canvas = await captureReportCanvas();
+      const imgData = canvas.toDataURL("image/png");
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 40;
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height / canvas.width) * imgWidth;
+
+      pdf.setFont("courier", "bold");
+      pdf.setFontSize(14);
+      pdf.text("InspectLog — Quality Inspection Report", margin, 40);
+      pdf.setFont("courier", "normal");
+      pdf.setFontSize(10);
+      pdf.text(`Ticket #${ticketNo.textContent}  ·  ${new Date().toLocaleString()}`, margin, 58);
+
+      pdf.addImage(imgData, "PNG", margin, 75, imgWidth, imgHeight);
+      pdf.save(reportFilename("pdf"));
+    } catch (err) {
+      showError("Could not generate the PDF export.");
+    } finally {
+      downloadPdfBtn.disabled = false;
+    }
   });
 
   recalc();
